@@ -31,7 +31,20 @@ type FuturesTrader struct {
 
 // NewFuturesTrader 创建合约交易器
 func NewFuturesTrader(apiKey, secretKey string) *FuturesTrader {
+	log.Printf("🔧 创建合约交易器，APIKey: %s", apiKey)
 	client := futures.NewClient(apiKey, secretKey)
+	
+	// 优先尝试设置API端点方法；若库不支持则直接设置BaseURL
+	// 部分版本提供 SetApiEndpoint / SetBaseURL，均尝试兼容
+	type apiEndpointSetter interface{ SetApiEndpoint(string) }
+	if setter, ok := any(client).(apiEndpointSetter); ok {
+		setter.SetApiEndpoint("https://testnet.binancefuture.com")
+	} else {
+		// 回退：直接设置 BaseURL 字段（go-binance v2 支持）
+		client.BaseURL = "https://testnet.binancefuture.com"
+	}
+	log.Printf("🔧 设置测试网端点: https://testnet.binancefuture.com")
+	
 	return &FuturesTrader{
 		client:        client,
 		cacheDuration: 15 * time.Second, // 15秒缓存
@@ -237,6 +250,8 @@ func (t *FuturesTrader) OpenLong(symbol string, quantity float64, leverage int) 
 		return nil, err
 	}
 
+	log.Printf("---开多仓中---: %s 数量: %s", symbol, quantityStr)
+
 	// 创建市价买入订单
 	order, err := t.client.NewCreateOrderService().
 		Symbol(symbol).
@@ -279,6 +294,8 @@ func (t *FuturesTrader) OpenShort(symbol string, quantity float64, leverage int)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("---开空仓中---: %s 数量: %s", symbol, quantityStr)
 
 	// 创建市价卖出订单
 	order, err := t.client.NewCreateOrderService().

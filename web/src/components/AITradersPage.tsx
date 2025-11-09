@@ -195,23 +195,7 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
         return;
       }
       
-      const request = {
-        name: data.name,
-        ai_model_id: data.ai_model_id,
-        exchange_id: data.exchange_id,
-        initial_balance: data.initial_balance,
-        scan_interval_minutes: data.scan_interval_minutes,
-        btc_eth_leverage: data.btc_eth_leverage,
-        altcoin_leverage: data.altcoin_leverage,
-        trading_symbols: data.trading_symbols,
-        custom_prompt: data.custom_prompt,
-        override_base_prompt: data.override_base_prompt,
-        is_cross_margin: data.is_cross_margin,
-        use_coin_pool: data.use_coin_pool,
-        use_oi_top: data.use_oi_top
-      };
-      
-      await api.updateTrader(editingTrader.trader_id, request);
+      await api.updateTrader(editingTrader.trader_id, data);
       setShowEditModal(false);
       setEditingTrader(null);
       mutateTraders();

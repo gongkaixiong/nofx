@@ -189,6 +189,7 @@ export function TraderConfigModal({
         initial_balance: formData.initial_balance,
         scan_interval_minutes: formData.scan_interval_minutes,
       };
+      console.log('saveData:', saveData);
       await onSave(saveData);
       onClose();
     } catch (error) {
@@ -444,6 +445,7 @@ export function TraderConfigModal({
           </div>
 
           {/* Trading Prompt */}
+          
           <div className="bg-[#0B0E11] border border-[#2B3139] rounded-lg p-5">
             <h3 className="text-lg font-semibold text-[#EAECEF] mb-5 flex items-center gap-2">
               💬 交易策略提示词

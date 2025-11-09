@@ -279,6 +279,9 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	
+	// 记录收到的trading_symbols值
+	log.Printf("收到创建交易员请求，trading_symbols: '%s'", req.TradingSymbols)
 
 	// 校验杠杆值
 	if req.BTCETHLeverage < 0 || req.BTCETHLeverage > 50 {
@@ -368,6 +371,9 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 		IsRunning:            false,
 	}
 
+	// 记录即将保存到数据库的trading_symbols值
+	log.Printf("准备保存交易员到数据库，TraderRecord.TradingSymbols: '%s'", trader.TradingSymbols)
+	
 	// 保存到数据库
 	err := s.database.CreateTrader(trader)
 	if err != nil {
@@ -404,7 +410,8 @@ type UpdateTraderRequest struct {
 	TradingSymbols      string  `json:"trading_symbols"`
 	CustomPrompt        string  `json:"custom_prompt"`
 	OverrideBasePrompt  bool    `json:"override_base_prompt"`
-	IsCrossMargin       *bool   `json:"is_cross_margin"`
+	IsCrossMargin       *bool   `json:"is_cross_margin"`	
+	SystemPromptTemplate string  `json:"system_prompt_template"`
 }
 
 // handleUpdateTrader 更新交易员配置
@@ -417,6 +424,9 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	
+	// 记录收到的trading_symbols值
+	log.Printf("收到更新交易员请求，trading_symbols: '%s'", req.TradingSymbols)
 
 	// 检查交易员是否存在且属于当前用户
 	traders, err := s.database.GetTraders(userID)
@@ -460,6 +470,8 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 		scanIntervalMinutes = existingTrader.ScanIntervalMinutes // 保持原值
 	}
 
+
+	
 	// 更新交易员配置
 	trader := &config.TraderRecord{
 		ID:                   traderID,
@@ -473,11 +485,14 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 		TradingSymbols:       req.TradingSymbols,
 		CustomPrompt:         req.CustomPrompt,
 		OverrideBasePrompt:   req.OverrideBasePrompt,
-		SystemPromptTemplate: existingTrader.SystemPromptTemplate, // 保持原值
+		SystemPromptTemplate: req.SystemPromptTemplate, // 保持原值
 		IsCrossMargin:        isCrossMargin,
 		ScanIntervalMinutes:  scanIntervalMinutes,
 		IsRunning:            existingTrader.IsRunning, // 保持原值
 	}
+	
+	// 记录即将保存到数据库的trading_symbols值
+	log.Printf("准备更新交易员配置，TraderRecord.SystemPromptTemplate: '%s'", trader.SystemPromptTemplate)
 
 	// 更新数据库
 	err = s.database.UpdateTrader(trader)
@@ -857,6 +872,7 @@ func (s *Server) handleGetTraderConfig(c *gin.Context) {
 		"use_coin_pool":         traderConfig.UseCoinPool,
 		"use_oi_top":            traderConfig.UseOITop,
 		"is_running":            isRunning,
+		"system_prompt_template": traderConfig.SystemPromptTemplate,
 	}
 
 	c.JSON(http.StatusOK, result)

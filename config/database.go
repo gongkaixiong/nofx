@@ -784,6 +784,9 @@ func (d *Database) CreateTrader(trader *TraderRecord) error {
 		INSERT INTO traders (id, user_id, name, ai_model_id, exchange_id, initial_balance, scan_interval_minutes, is_running, btc_eth_leverage, altcoin_leverage, trading_symbols, use_coin_pool, use_oi_top, custom_prompt, override_base_prompt, system_prompt_template, is_cross_margin)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, trader.ID, trader.UserID, trader.Name, trader.AIModelID, trader.ExchangeID, trader.InitialBalance, trader.ScanIntervalMinutes, trader.IsRunning, trader.BTCETHLeverage, trader.AltcoinLeverage, trader.TradingSymbols, trader.UseCoinPool, trader.UseOITop, trader.CustomPrompt, trader.OverrideBasePrompt, trader.SystemPromptTemplate, trader.IsCrossMargin)
+	if err != nil {
+		log.Printf("保存交易员到数据库时出错: %v, trading_symbols: '%s'", err, trader.TradingSymbols)
+	}
 	return err
 }
 
@@ -833,6 +836,7 @@ func (d *Database) UpdateTraderStatus(userID, id string, isRunning bool) error {
 
 // UpdateTrader 更新交易员配置
 func (d *Database) UpdateTrader(trader *TraderRecord) error {
+	log.Printf("~~~~~~~~~~更新交易员配置: %v, system_prompt_template: '%s'", trader, trader.SystemPromptTemplate)
 	_, err := d.db.Exec(`
 		UPDATE traders SET
 			name = ?, ai_model_id = ?, exchange_id = ?, initial_balance = ?,
@@ -844,6 +848,9 @@ func (d *Database) UpdateTrader(trader *TraderRecord) error {
 		trader.ScanIntervalMinutes, trader.BTCETHLeverage, trader.AltcoinLeverage,
 		trader.TradingSymbols, trader.CustomPrompt, trader.OverrideBasePrompt,
 		trader.SystemPromptTemplate, trader.IsCrossMargin, trader.ID, trader.UserID)
+	if err != nil {
+		log.Printf("更新交易员配置时出错: %v, trading_symbols: '%s'", err, trader.TradingSymbols)
+	}
 	return err
 }
 
@@ -868,6 +875,7 @@ func (d *Database) GetTraderConfig(userID, traderID string) (*TraderRecord, *AIM
 	err := d.db.QueryRow(`
 		SELECT 
 			t.id, t.user_id, t.name, t.ai_model_id, t.exchange_id, t.initial_balance, t.scan_interval_minutes, t.is_running, t.created_at, t.updated_at,
+			t.trading_symbols,t.is_cross_margin,t.btc_eth_leverage,t.altcoin_leverage,t.use_coin_pool,t.use_oi_top,t.system_prompt_template,t.custom_prompt,t.override_base_prompt,
 			a.id, a.user_id, a.name, a.provider, a.enabled, a.api_key, a.created_at, a.updated_at,
 			e.id, e.user_id, e.name, e.type, e.enabled, e.api_key, e.secret_key, e.testnet,
 			COALESCE(e.hyperliquid_wallet_addr, '') as hyperliquid_wallet_addr,
@@ -883,6 +891,8 @@ func (d *Database) GetTraderConfig(userID, traderID string) (*TraderRecord, *AIM
 		&trader.ID, &trader.UserID, &trader.Name, &trader.AIModelID, &trader.ExchangeID,
 		&trader.InitialBalance, &trader.ScanIntervalMinutes, &trader.IsRunning,
 		&trader.CreatedAt, &trader.UpdatedAt,
+		&trader.TradingSymbols, &trader.IsCrossMargin, &trader.BTCETHLeverage, &trader.AltcoinLeverage,
+		&trader.UseCoinPool, &trader.UseOITop, &trader.SystemPromptTemplate, &trader.CustomPrompt, &trader.OverrideBasePrompt,
 		&aiModel.ID, &aiModel.UserID, &aiModel.Name, &aiModel.Provider, &aiModel.Enabled, &aiModel.APIKey,
 		&aiModel.CreatedAt, &aiModel.UpdatedAt,
 		&exchange.ID, &exchange.UserID, &exchange.Name, &exchange.Type, &exchange.Enabled,
